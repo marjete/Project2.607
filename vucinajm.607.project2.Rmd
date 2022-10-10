@@ -1,0 +1,171 @@
+---
+title: "Untitled"
+author: "Marjete"
+date: "2022-10-06"
+output: html_document
+---
+Data 607 - Project 2:The goal of this assignment is to give you practice in preparing different datasets for downstream
+analysis work.
+```{r}
+library(tidyverse)
+```
+#Dataset 1
+```{r}
+cyber <- read.csv("https://raw.githubusercontent.com/marjete/Project2.607/main/Cyber_Threats.Brown%2CT.csv") 
+cyber
+# Analysis: Compare the frequency of cyber crime in each year.
+```
+
+
+```{r}
+#columns Adware and Ransomware should be an numeric not character; also #s with commas change to in NA when attempting to do so. First drop the ','
+
+col_conv <- c("Ransomware", "Adware")
+cyber_updated <- cyber                                            # Duplicate data
+cyber_updated[ , col_conv] <- lapply(cyber_updated[ , col_conv],  # Convert data
+                                       function(x){ as.numeric(as.character(gsub(",", "", x))) })
+cyber_updated             
+
+```
+
+
+```{r}
+cyber_updated <- cyber_updated %>% 
+  gather(type, attack.count, 2:5) #change wide structure to long
+cyber_updated
+```
+```{r}
+LineGraph <- ggplot(cyber_updated, aes(x = Year, y = attack.count))
+LineGraph <- LineGraph + geom_line(aes(color=factor(type), group = type))
+LineGraph <- LineGraph + scale_color_discrete(name = "type")
+LineGraph <- LineGraph + labs(title = "Cyber attacks from 2016-22", x = "Year", y = "Total Number of attacks")
+LineGraph
+  #from the graph below, we can see the breakdown per type of attack per year, the discussion question didnt ask to compare companies so next we will sum the attack count to compare the frequency per year
+```
+
+```{r}
+cyber_updated %>%
+  group_by(Year) %>%
+  summarise(Freq = sum(attack.count)) #use dyplr to find the sum by year
+```
+Conclusion: Year 2016 had the highest frequency of cyber attacks (7406), with 2020 being the next highest count of attacks at 6032. Technically 2022 has not ended so more data could be included in the next few months. 
+
+#Dataset 2 
+```{r}
+stroke <- read.csv("https://raw.githubusercontent.com/marjete/Project2.607/main/brain_stroke.csv") 
+glimpse(stroke)
+#Analysis: Predict risk of brain stroke
+```
+```{r}
+#the data seems pretty clean already; there are no NA in the dataset
+colSums(is.na(stroke))
+
+```
+
+
+```{r}
+as.data.frame(table(stroke$smoking_status))
+```
+```{r}
+#unknown smoking status is somewhat like NA so it should be replaced with the highest category present (never smoked)
+stroke <- stroke %>% mutate(smoking_status = replace(smoking_status, smoking_status == "Unknown", "never smoked"))
+as.data.frame(table(stroke$smoking_status))
+```
+
+
+
+```{r}
+stroke %>%
+  group_by(gender) %>%
+  summarise(Freq = sum(stroke))
+```
+
+```{r}
+stroke %>%
+  group_by(hypertension) %>%
+  summarise(Freq = sum(stroke))
+```
+
+
+```{r}
+stroke %>%
+  group_by(heart_disease) %>%
+  summarise(Freq = sum(stroke))
+```
+
+```{r}
+stroke %>%
+  group_by(ever_married) %>%
+  summarise(Freq = sum(stroke))
+```
+
+```{r}
+f5 <-ggplot(data = stroke) +geom_bar(mapping = aes(x = smoking_status))
+f5
+```
+```{r}
+stroke %>%
+  group_by(smoking_status) %>%
+  summarise(Freq = sum(stroke))
+
+```
+
+```{r}
+f6 <-ggplot(data = stroke) +geom_bar(mapping = aes(x = work_type))
+f6
+```
+```{r}
+stroke %>%
+  group_by(work_type) %>%
+  summarise(Freq = sum(stroke)) 
+```
+
+```{r}
+ggplot(data = stroke, aes(x= age, y = smoking_status, color = stroke))+geom_point()
+```
+```{r}
+stroke <- stroke %>% 
+  gather(factors, result, 1:10) #change wide structure to long; I'm not sure if this layout of data would be best or if there should in fact be more columns 
+stroke
+```
+
+```{r}
+stroke %>%
+group_by(factors) %>%
+ggplot(aes(stroke = 1)) +
+  facet_wrap(.~result) #this could be improved
+```
+
+Conclusion: A lot of the factors that indicate a higher risk of having a stroke. At this time it seems unclear if, for example, folks who work in the private sector have a higher risk for stroke, even though its the category with the highest frequency of having a stoke, due to the survey sample happen to work in this field more so. Similarly, it would not be correct to say that women have a higher chance of stoke because the sample size of women in this data set is just larger. Ideally, I would attempt the find the statistical significance of each factor to better compare which factors lead to higher risk. 
+
+#dataset 3
+```{r}
+nba <- read.csv("https://raw.githubusercontent.com/marjete/Project2.607/main/NBA%20Distance%20Traveled.csv") 
+glimpse(nba)
+#analysis- Look at the relationship between distance traveled and average speed
+
+```
+ 
+
+```{r}
+#Drop rows not needed; doing this changed the formatting 
+nba <- nba[, -c(2:7, 11)]
+
+head(nba)
+```
+```{r}
+nba <- nba[, -c(4)]
+head(nba)
+```
+```{r}
+colnames(nba) <-  c("player", "distance", "speed")
+head(nba) #renaming columns
+```
+```{r}
+ggplot(data = nba, aes(x= distance, y = speed, color = player))+geom_point() 
+#not sure why additional players not in the dataset appear in the plot below
+```
+Conclusion: the graph above does not seem to reflect a correlation between speed and distance(miles). I am unsure how to compare distance and speed, maybe investigating the time it took could be helpful by doing distance divided by speed.
+
+
+
